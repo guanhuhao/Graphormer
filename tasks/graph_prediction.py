@@ -233,48 +233,6 @@ class GraphPredictionTask(FairseqTask):
     def max_nodes(self):
         return self.cfg.max_nodes
 
-    def train_step(
-        self, sample, model, criterion, optimizer, update_num, ignore_grad=False
-    ):
-        """
-        Do forward and backward, and return the loss as computed by *criterion*
-        for the given *model* and *sample*.
-
-        Args:
-            sample (dict): the mini-batch. The format is defined by the
-                :class:`~fairseq.data.FairseqDataset`.
-            model (~fairseq.models.BaseFairseqModel): the model
-            criterion (~fairseq.criterions.FairseqCriterion): the criterion
-            optimizer (~fairseq.optim.FairseqOptimizer): the optimizer
-            update_num (int): the current update
-            ignore_grad (bool): multiply loss by 0 if this is set to True
-
-        Returns:
-            tuple:
-                - the loss
-                - the sample size, which is used as the denominator for the
-                  gradient
-                - logging outputs to display while training
-        """
-        model.train()
-        model.set_num_updates(update_num)
-        with torch.autograd.profiler.record_function("forward"):
-            with torch.cuda.amp.autocast(enabled=(isinstance(optimizer, AMPOptimizer))):
-                loss, sample_size, logging_output = criterion(model, sample)
-        if ignore_grad:
-            loss *= 0
-        with torch.autograd.profiler.record_function("backward"):
-            optimizer.backward(loss)
-        # print("model:{}".format(model))
-        # print("loss:{} sampleSize:{} logging_output:{}".format(loss,sample_size, logging_output))
-        return loss, sample_size, logging_output
-
-    def valid_step(self, sample, model, criterion):
-        model.eval()
-        with torch.no_grad():
-            loss, sample_size, logging_output = criterion(model, sample)
-        return loss, sample_size, logging_output
-
     @property
     def source_dictionary(self):
         return None
@@ -373,7 +331,6 @@ class GraphPredictionWithFlagTask(GraphPredictionTask):
             if ignore_grad:
                 loss *= 0
         loss /= self.flag_m
-        print("loss:{}  flag_m:{}" % loss, self.flag_m)
         total_loss = 0
         for _ in range(self.flag_m - 1):
             optimizer.backward(loss)
@@ -402,5 +359,4 @@ class GraphPredictionWithFlagTask(GraphPredictionTask):
         optimizer.backward(loss)
         total_loss += loss.detach()
         logging_output["loss"] = total_loss
-        print("total_loss:{}" % total_loss)
         return total_loss, sample_size, logging_output

@@ -2,9 +2,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-CUDA_VISIBLE_DEVICES=1 fairseq-train \
+CUDA_VISIBLE_DEVICES=0 fairseq-train \
 --user-dir ../../graphormer \
---num-workers 16 \
+--num-workers 20 \
 --ddp-backend=legacy_ddp \
 --dataset-name pcqm4m \
 --dataset-source ogb \
@@ -16,9 +16,9 @@ CUDA_VISIBLE_DEVICES=1 fairseq-train \
 --optimizer adam --adam-betas '(0.9, 0.999)' --adam-eps 1e-8 --clip-norm 5.0 --weight-decay 0.0 \
 --lr-scheduler polynomial_decay --power 1 --warmup-updates 60000 --total-num-update 1000000 \
 --lr 2e-4 --end-learning-rate 1e-9 \
---batch-size 256 \
+--batch-size 512 \
 --fp16 \
---data-buffer-size 20 \
+--data-buffer-size 40 \
 --encoder-layers 12 \
 --encoder-embed-dim 768 \
 --encoder-ffn-embed-dim 768 \

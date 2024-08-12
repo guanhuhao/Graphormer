@@ -33,10 +33,9 @@ from ..pretrain import load_pretrained_model
 
 @register_model("graphormer")
 class GraphormerModel(FairseqEncoderModel):
-    def __init__(self, args, encoder,is_train = True):
+    def __init__(self, args, encoder):
         super().__init__(encoder)
         self.args = args
-        self.is_train = is_train
 
         if getattr(args, "apply_graphormer_init", False):
             self.apply(init_graphormer_params)
@@ -150,8 +149,8 @@ class GraphormerModel(FairseqEncoderModel):
         encoder = GraphormerEncoder(args)
         return cls(args, encoder)
 
-    def forward(self, batched_data, is_train = True, **kwargs):
-        return self.encoder(batched_data, is_train = is_train, **kwargs)
+    def forward(self, batched_data, **kwargs):
+        return self.encoder(batched_data, **kwargs)
 
 
 class GraphormerEncoder(FairseqEncoder):
@@ -216,10 +215,9 @@ class GraphormerEncoder(FairseqEncoder):
         if self.embed_out is not None:
             self.embed_out.reset_parameters()
 
-    def forward(self, batched_data, is_train, perturb=None, masked_tokens=None, **unused):
+    def forward(self, batched_data, perturb=None, masked_tokens=None, **unused):
         inner_states, graph_rep = self.graph_encoder(
             batched_data,
-            is_train = is_train,
             perturb=perturb,
         )
 

@@ -50,9 +50,6 @@ class GraphNodeFeature(nn.Module):
             batched_data["in_degree"],
             batched_data["out_degree"],
         )
-        # print("shape\nx:{} in_degree:{} out_degree:{}".format(x.shape, in_degree.shape, out_degree.shape))
-        # print("value\nx:{} in_degree:{} out_degree:{}".format(x, in_degree, out_degree))
-        
         n_graph, n_node = x.size()[:2]
 
         # node feauture + graph token

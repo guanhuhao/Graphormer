@@ -6,13 +6,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# import debugpy
-# debugpy.listen(('127.0.0.1', 9901))
-# # print('Waiting for debugger attach')
-# debugpy.wait_for_client()
-
-
-
 from typing import Optional, Tuple
 
 import torch
@@ -49,7 +42,8 @@ class PatchDropout(torch.nn.Module):
 
         # batch, length, dim
         B, T, C = x.shape
-        _T = T - 1
+        _T = T -1 # patch lenght (without CLS)
+        
         keep = int(_T * self.keep_rate)
         patchDrop_mask = torch.rand(B, _T, device=x.device)
         patchDrop_mask = torch.argsort(patchDrop_mask, dim=1) + 1
@@ -57,35 +51,25 @@ class PatchDropout(torch.nn.Module):
         
         # making cls mask (assumes that CLS is always the 1st element)
         cls_mask = torch.zeros(B, 1, dtype=torch.int64, device=x.device)
-        # cat cls and patch mask
         patchDrop_mask = torch.hstack([cls_mask, patchDrop_mask])
-        
-        
-        
         
         # gather tokens
         index = patchDrop_mask.unsqueeze(-1).repeat(1, 1, C)
         x = torch.gather(x, dim=1, index=index)
-        # print(x.shape)
+        print(x.shape)
        
         if attn_mask != None: 
-            # # print(attn_mask)
-            # print(attn_bias.shape)
+            print(attn_mask)
             attn_mask = torch.gather(attn_mask, dim=1, index=index)
         if padding_mask != None:
-            # print(padding_mask.shape)
-            index = patchDrop_mask
-            # print(index.shape)
-            padding_mask = torch.gather(padding_mask, dim=1, index=index)
+            print(padding_mask.shape)
+            padding_mask = torch.gather(padding_mask, dim=1, index=patchDrop_mask)
         if attn_bias != None:
-            # print(attn_bias.shape)
+            print(attn_bias.shape)
             B, T, N, N = attn_bias.shape
-            row = index.unsqueeze(1).unsqueeze(-1).repeat(1, T, 1, N)
-            # print(patchDrop_mask.shape)
-            # print(row.shape)
+            row = index.unsqueeze(-1).repeat(1, 1, 1, N)
             attn_bias = torch.gather(attn_bias, dim=2, index=row)
-            col = index.unsqueeze(1).unsqueeze(1).repeat(1, T, keep + 1, 1)
-            # print(col.shape)
+            col = index.unsqueeze(0).repeat(1, T, 1, 1)
             attn_bias = torch.gather(attn_bias, dim=3, index=col)
             # attn_bias = torch.gather(attn_bias, dim=1, index=index)
         
@@ -266,7 +250,6 @@ class GraphormerGraphEncoder(nn.Module):
     def forward(
         self,
         batched_data,
-        is_train,
         perturb=None,
         last_state_only: bool = False,
         token_embeddings: Optional[torch.Tensor] = None,
@@ -310,16 +293,14 @@ class GraphormerGraphEncoder(nn.Module):
             n_graph, 1, device=padding_mask.device, dtype=padding_mask.dtype
         )
         padding_mask = torch.cat((padding_mask_cls, padding_mask), dim=1)
-
-        if is_train:
-            dropPatches = PatchDropout(keep_rate= 0.8)
-            x, padding_mask, attn_mask, attn_bias = dropPatches.forward(x, padding_mask, attn_mask, attn_bias)
-        else :
-            print("validing without DropPatch")
-        # print("x: {}", x.shape)
-        # print("bias: {}", attn_bias.shape)
-        # print("padding: {}", padding_mask.shape)
+       
+        print("x: {}", x.shape)
+        print("bias: {}", attn_bias.shape)
+        print("padding: {}", padding_mask.shape)
         
+        # dropPatches = PatchDropout(keep_rate= 0.8)
+        # x, padding_mask, attn_mask, attn_bias = dropPatches.forward(x, padding_mask, attn_mask, attn_bias)
+
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)

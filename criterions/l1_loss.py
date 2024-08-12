@@ -23,13 +23,12 @@ class GraphPredictionL1Loss(FairseqCriterion):
         2) the sample size, which is used as the denominator for the gradient
         3) logging outputs to display while training
         """
-        # print("ghh:",sample)
         sample_size = sample["nsamples"]
 
         with torch.no_grad():
             natoms = sample["net_input"]["batched_data"]["x"].shape[1]
 
-        logits = model(is_train = False, **sample["net_input"])
+        logits = model(**sample["net_input"])
         logits = logits[:, 0, :]
         targets = model.get_targets(sample, [logits])
 

@@ -90,8 +90,8 @@ class OGBDatasetLookupTable:
             os.system("touch dataset/pcqm4m_kddcup2021/RELEASE_v1.txt")
             inner_dataset = MyPygPCQM4MDataset()
             idx_split = inner_dataset.get_idx_split()
-            train_idx = idx_split["train"][:10000]
-            valid_idx = idx_split["valid"][:1000]
+            train_idx = idx_split["train"]
+            valid_idx = idx_split["valid"]
             test_idx = idx_split["test"]
         else:
             raise ValueError(f"Unknown dataset name {dataset_name} for ogb source.")
